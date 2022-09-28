@@ -3,59 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>瀑布流</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #f5f5f5;
-      }
-      .clearfix::after {
-        content: "";
-        display: block;
-        visibility: hidden;
-        clear: both;
-      }
-      .app {
-        padding: 0.4%;
-      }
-      .app > .column {
-        width: 32.5%;
-        float: left;
-        background-color: #fff;
-      }
-      .app .column-item {
-        position: relative;
-        width: 100%;
-        overflow: hidden;
-        margin-bottom: 10px;
-        background: url("./img/load.gif") no-repeat center center;
-        background-size: 70%;
-        background-color: #e8e8e8;
-        box-shadow: 0 0 6px 6px #ccc;
-      }
-      .app .column-item p {
-        display: none;
-        color: #fff;
-        text-align: center;
-      }
-      .app .column-item span {
-        position: absolute;
-        top: 40%;
-        left: 50%;
-        color: #fff;
-        font-size: 20px;
-        display: none;
-      }
-      .app > div:nth-last-child(2n) {
-        margin: 0 1%;
-      }
-      .app img {
-        opacity: 0;
-        width: 100%;
-        height: 100%;
-      }
-    </style>
+    <link rel="stylesheet" href="./css/index.css">
   </head>
   <body>
     <div class="app clearfix"></div>
@@ -63,56 +11,35 @@
     <script src="./js/index.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.2/axios.min.js"></script>
     <script>
-      const column = 3;
-      init();
       /**
        * @description:  发起请求获取数据
        * @author: huchao
        */
+       const waterfallNew = new Waterfall(3);
+       waterfallNew.init()
+       
       const getData = function (type) {
         axios.get("./data.json").then((res) => {
-          const domList = getDomList();
-          const { data } = res;
-          // 处理数据，生成dom节点，为预加载做好准备
-          for (let i = 0; i < data.length; i += 3) {
-            const { url, id, width, height } = data[i];
-            const combination = data.slice(i, i + column); // 截取3个出来组成新的数组
-            combination.sort((a, b) => b.height - a.height); // 并且将数组从高到低排序
-            // 循环 【column】dom节点，默认：3列
-            domList
-              .sort((a, b) => a.offsetHeight - b.offsetHeight)
-              .forEach((item, index) => {
-                const dataItem = combination[index];
-                if (!dataItem) return false;
-                item.appendChild(createDom(dataItem));
-              });
-          }
-          // 调用延迟加载, 数据绑定完后延迟1000ms
+          waterfallNew.creatDefaultDiv(res.data);
+          // 调用延迟加载, 数据绑定完后延迟500ms
           if (type === 'init') {
-            setTimeout(() => {
-            lazyImages();
-          }, 500);
+            setTimeout(() => { waterfallNew.lazyImages() }, 500);
           }
         });
       };
+
       // 加载更多
       const loadMore = function () {
         // 滚动到底部-》 屏幕高度 + 卷去的高度 + 500 >= 页面的真实高度
         const bodyTopHeight = getBodyTopHeight(500);
         const bodyHeight = document.documentElement.offsetHeight;
         if (bodyTopHeight >= bodyHeight) {
-          getData('more');
+          getData();
         }
-      };
-
-      window.onscroll = debounce(
-        function () {
-          loadMore();
-          lazyImages();
-        },
-        100,
-        true
-      );
+        waterfallNew.lazyImages();
+      }
+      // 监听滚动事件
+      window.onscroll = throttle(loadMore, 10);
       getData('init');
     </script>
   </body>

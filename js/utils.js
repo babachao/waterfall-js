@@ -23,6 +23,17 @@ const debounce = function (fn, wait, immediate = false) {
     return result;
   };
 };
+// 节流方法
+const throttle = function (fn, delay){
+  var timer = null;
+  return function(...args){
+      var context = this;
+      clearTimeout(timer);
+      timer = setTimeout(function(){
+          fn.call(context, args);
+      }, delay);
+  };
+};
 
 /**
  * @description: 计算： 屏幕高度 + 卷去的高度
