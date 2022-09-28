@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>瀑布流</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+      }
+      .clearfix::after {
+        content: "";
+        display: block;
+        visibility:hidden;
+        clear: both;
+      }
+      .app {
+        padding: 0.4%;
+      }
+      .app > .column {
+        width: 32.5%;
+        float: left;
+        background-color: #fff;
+      }
+      .app .column-item{
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 10px;
+        background: url('./img/load.gif') no-repeat center center;
+        background-size: 70%;
+        background-color: #E8E8E8;
+        box-shadow: 0 0 6px 6px #ccc;
+        
+      }
+      .app .column-item p {
+        display: none;
+        color: #fff;
+        text-align: center;
+      }
+      .app .column-item span {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        color: #fff;
+        font-size: 20px;
+        display: none;
+      }
+      .app > div:nth-last-child(2n) {
+        margin:0 1%;
+      }
+      .app img {
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app clearfix"></div>
+    <script src="./js/index.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.2/axios.min.js"></script>
+    <script>
+      const column = 3;
+      init();
+      // 发起请求获取数据
+      const getData = function (data) {
+        axios.get('./data.json').then(res=>{
+          const domList = getDomList();
+          const { data } = res;
+          console.log(data.length,'---')
+          for (let i = 0; i < data.length; i+=3) {
+            const { url, id, width, height } = data[i];
+            const combination = data.slice(i, i + column); // 截取3个出来组成新的数组
+            combination.sort((a,b) => b.height - a.height); // 并且将数组从高到低排序
+            // 循环 【column】dom节点，默认：3列
+            domList.sort((a,b) => a.offsetHeight - b.offsetHeight).forEach((item, index)=>{
+              const dataItem = combination[index]; 
+              if (!dataItem) return false;
+              item.appendChild(createDom(dataItem));
+            })
+          }
+          // 调用延迟加载, 数据绑定完后延迟1000ms
+          setTimeout(()=>{lazyImages('init')}, 50)
+        })
+    }
+    // 获取瀑布流的列。默认3列
+    const getDomList = function () {
+        return [...document.querySelectorAll('.column')];
+    }
+    
+      // 创建div->img节点，appendChild到每一列中
+     const createDom = function (dataItem) {
+        const { url, width, height, id, text } = dataItem;
+          const createDiv = document.createElement('div');
+          const span = document.createElement('span');
+          const p = document.createElement('p');
+          const imgDom = new Image();
+          p.innerHTML = text;
+          span.innerHTML = id;
+          imgDom.setAttribute('data-src', url);
+          createDiv.classList.add('column-item')
+          createDiv.setAttribute('id', id);
+          createDiv.setAttribute('isLoad', 'false');
+          createDiv.style.height = height / 2 + 'px';
+          createDiv.appendChild(imgDom);
+          createDiv.appendChild(p);
+          createDiv.appendChild(span)
+          return createDiv;
+      }
+      
+      const debounce = function (fn, wait, immediate = false){
+          let result = null; // 储存返回的result
+          let timeOut = null; // 记录定时器
+          return function (...args) {
+            const context = this; // 获取this指向
+            const now = immediate && !timeOut; //如果需要在开始边界执行，则需要immediate为true并且没有timeOut
+            clearTimeout(timeOut); // 关键：每次进来时，需要清除上一个定时器，防抖目的是等待时间内只执行一次
+            timeOut = setTimeout(() => {
+              if(!immediate) result = fn.call(context, ...args); // 结束边界触发
+              timeOut = null;
+            }, wait);
+            if (now) result = fn.call(context, ...args); // 开始边界触发
+            return result;
+          }
+      }
+      // 图片延迟加载
+      const lazyImages = function (type) {
+          const colums  = getDomList()
+          const allImgBox = document.querySelectorAll("[isLoad='false']"); // 只查找未加载的imgBox
+          const bodyTopHeight = document.documentElement.clientHeight + document.documentElement.scrollTop;
+          for (let i = 0; i < allImgBox.length; i++) {
+            const item = allImgBox[i];
+            const imgItem = item.children[0];
+            const imgHeight = item.offsetHeight + item.offsetTop;
+            if (imgHeight <= bodyTopHeight) {
+              item.setAttribute('isLoad', 'true');
+              handleImg(imgItem)
+            }
+          }
+      }
+      // 加载更多
+      const loadMore = function (item) {
+        // 滚动到底部-》 一屏幕高度 + 卷去的高度 + 500 >= 页面的真实高度
+        const bodyTopHeight = document.documentElement.clientHeight + document.documentElement.scrollTop + 500;
+        const bodyHeight = document.documentElement.offsetHeight;
+        if (bodyTopHeight >= bodyHeight) {
+          getData();
+        }
+      }
+      const handleImg = (imgItem) => {
+          const url = imgItem.getAttribute('data-src');
+          imgItem.setAttribute('src', url);
+          imgItem.onload = () => {
+            imgItem.style.opacity = 1;
+            imgItem.style.transition = '0.6s';
+          }
+      }
+      getData();
+      window.onscroll = debounce(function(){
+        lazyImages();
+        loadMore()
+      }, 100, true);
+    </script>
+  </body>
+</html>
