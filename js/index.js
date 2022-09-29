@@ -6,13 +6,12 @@ class Waterfall {
       const app = document.querySelector('.app');
       let htmlStr = '';
       for (let i = 0; i < column; i++) {
-        htmlStr += `<div class="column"></div>`;
+        htmlStr += `<div id="${i}" class="column" style="width: ${Math.floor(100 / column)}%;"></div>`;
       }
       app.innerHTML = htmlStr;
     },
       /**
        * @description:  获取瀑布流的列。默认3列
-       * @author: huchao
        */
       this.getColumns = function () {
         return [...document.querySelectorAll(".column")];
@@ -20,15 +19,16 @@ class Waterfall {
       /**
        * @description: 创建默认的div
        * @param { object } data 当前请求的数据
-       * @return {*}
-       * @author: huchao
        */
       this.creatDefaultDiv = function (data) {
         const columns = this.getColumns();
         for (let i = 0; i < data.length; i += column) {
-          const combination = data.slice(i, i + column); // 截取3个出来组成新的数组
-          combination.sort((a, b) => b.height - a.height); // 并且将数组从高到低排序
-          // 循环 【column】dom节点，默认：3列
+          // 3个为一组，组成新的数组。
+          // 1->data.slice(0,3) 2->data.slice(4,7) 依次类推
+          const combination = data.slice(i, i + column);
+          // 并且将【column】默认为3个，为一组的数据从高到低排序
+          combination.sort((a, b) => b.height - a.height);
+          // 根据dom的offsetHeight来排序，将优先插入矮的【column】
           columns
             .sort((a, b) => a.offsetHeight - b.offsetHeight)
             .forEach((columnDom, index) => {
@@ -43,8 +43,7 @@ class Waterfall {
        * @description: 基于innerHTML创建imgBox和img标签
        * @param {*} dataItem 单个数据item
        * @param {*} domItem 单个数据item
-       * @return {*}
-       * @author: huchao
+       * @return {string} 返回组装好的html
        */
       this.creatInnerHTML = function (dataItem, columnDom) {
         const { url, height, id, text } = dataItem;
@@ -60,8 +59,7 @@ class Waterfall {
       },
       /**
        * @description:  创建div->img节点，appendChild到每一列中
-       * @param { object } 请求下来的单条数据
-       * @author: huchao
+       * @param { object } dataItem 请求下来的单条数据
        */
       this.createAppendDom = function (dataItem) {
         const { url, height, id, text } = dataItem;
@@ -75,7 +73,7 @@ class Waterfall {
         createDiv.classList.add("column-item");
         createDiv.setAttribute("id", id);
         createDiv.setAttribute("isLoad", "false");
-        createDiv.style.height = height / 2 + "px";
+        createDiv.style.height = height / 2 + "px";  // 因为我用的图片高度太高了，所以除2了
         createDiv.appendChild(imgDom);
         createDiv.appendChild(p);
         createDiv.appendChild(span);
@@ -84,20 +82,18 @@ class Waterfall {
 
       /**
        * @description: 实现懒加载功能
-       * @author: huchao
        */
       this.lazyImages = function () {
         console.log('次数', this.testnum);
         console.time('循环时间：')
-        // 优化后，性能更好的懒加载，先循环列，再循环列中的imgBox，
-        const bodyTopHeight = getBodyTopHeight();
+        const bodyTopHeight = getBodyTopHeight(); // 获取可视高度 + 滚动高度（此方法在utils.js中）
         const colums = this.getColumns();
         for (let j = 0; j < colums.length; j++) {
           const columnItems = [...colums[j].querySelectorAll(".column-item[isLoad='false']")]; // 获取还没有加载过的box
           for (let i = 0; i < columnItems.length; i++) {
             const imgBox = columnItems[i];
             const imgBoxHeight = imgBox.offsetHeight + imgBox.offsetTop; // 当前imgBox的高 + 距离顶部的高
-              this.testnum += 1;
+            this.testnum += 1;
             // // imgBox的高 + 距离顶部的高 <= body高 + 滚动的距离时，进入判断并且将图片加载出来
             if (imgBoxHeight <= bodyTopHeight) {
               imgBox.setAttribute('isLoad', 'true');
@@ -121,13 +117,20 @@ class Waterfall {
         // }
         console.timeEnd('循环时间：')
       },
-      // 处理图片
-      this.handleImg = (imgItem) => {
-        const url = imgItem.getAttribute("data-src");
-        imgItem.setAttribute("src", url);
+      /**
+       * @description:  实现懒加载功能
+       * @param { object } imgItem 当前img的Dom节点
+       */
+      this.handleImg = function (imgItem) {
+        const url = imgItem.getAttribute("data-src"); // 获取到图片的链接
+        imgItem.setAttribute("src", url); // 设置给img的src
+        // 加载成功后设置style
         imgItem.onload = () => {
           imgItem.style.opacity = 1;
           imgItem.style.transition = "0.6s";
+        };
+        imgItem.onerror = (e) => {
+          // xxx 若加载失败，可在这展示默认图片
         };
       }
   }

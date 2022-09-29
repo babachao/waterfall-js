@@ -11,13 +11,12 @@
     <script src="./js/index.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.2/axios.min.js"></script>
     <script>
+      const waterfallNew = new Waterfall(3);
+      waterfallNew.init()
+
       /**
        * @description:  发起请求获取数据
-       * @author: huchao
        */
-       const waterfallNew = new Waterfall(3);
-       waterfallNew.init()
-       
       const getData = function (type) {
         axios.get("./data.json").then((res) => {
           waterfallNew.creatDefaultDiv(res.data);
@@ -39,7 +38,7 @@
         waterfallNew.lazyImages();
       }
       // 监听滚动事件
-      window.onscroll = throttle(loadMore, 10);
+      window.onscroll = throttle(loadMore, 300);
       getData('init');
     </script>
   </body>

@@ -23,15 +23,23 @@ const debounce = function (fn, wait, immediate = false) {
     return result;
   };
 };
-// 节流方法
+/**
+ * @description: 节流
+ * @param { Function } fn 需要调用的方法
+ * @param { number } wait 等待的时间
+ */
 const throttle = function (fn, delay){
-  var timer = null;
+  let timer = null;
   return function(...args){
-      var context = this;
-      clearTimeout(timer);
-      timer = setTimeout(function(){
+    let context = this;
+      if (!timer) {
+        timer = setTimeout(function(){
           fn.call(context, args);
-      }, delay);
+          clearTimeout(timer);
+          timer = null;
+        }, delay);
+        
+      }
   };
 };
 
