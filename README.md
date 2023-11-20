@@ -1,10 +1,5 @@
-持续创作，加速成长！这是我参与「掘金日新计划 · 10 月更文挑战」的第1天
-
-💡 github完整代码：[https://github.com/babachao/waterfall-js](https://github.com/babachao/waterfall-js) 
 
 💡 体验Demo:  [https://codesandbox.io/s/divine-cloud-ykewbr](https://codesandbox.io/s/divine-cloud-ykewbr) (codesandbox加载可能有些慢)
-
-💡 Tips： 建议下载一个Steam++使用，逛Github无阻碍~
 
 💡 写的不对的地方麻烦大伙纠正~，谢谢
 ## HTML
